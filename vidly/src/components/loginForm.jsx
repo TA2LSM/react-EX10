@@ -1,9 +1,15 @@
 import React, { Component } from 'react';
 
+import Input from './common/input';
+import withParams from './productDetails';
+
 class LoginForm extends Component {
   state = {
     account: { username: '', password: '' },
+    // boş string ya da server'dan çekilen değer ile init edilmeli. null ya da
+    // tanımsız ( account: {  password: '' }, gibi ) OLAMAZ. Hata alırız...
   };
+
   // gerçek DOM'da bir şeye erişmek için kullanılır. Mümkün olduğu kadar kullanmamaya
   // ya da en az sayıda kullanmaya çalışılır.
   //username = React.createRef();
@@ -45,56 +51,16 @@ class LoginForm extends Component {
       <div>
         <h1>Please Login</h1>
         <form onSubmit={this.handleSubmit}>
-          <div className='mb-3'>
-            <label
-              htmlFor='username'
-              className='form-label'
-            >
-              Username
-            </label>
-            <input
-              // autoFocus
-              // ref={this.username}
-              value={account.username}
-              name='username'
-              // input field artık kendi state'i yerine bu class'ın state'ine bağlandı
-              // controlled element oldu...
-              onChange={this.handleChange}
-              type='text'
-              className='form-control'
-              id='username'
-              aria-describedby='usernameHelp'
-            />
-            <div
-              id='usernameHelp'
-              className='form-text'
-            >
-              Enter your username
-            </div>
-          </div>
-          <div className='mb-3'>
-            <label
-              htmlFor='password'
-              className='form-label'
-            >
-              Password
-            </label>
-            <input
-              value={account.password}
-              name='password'
-              onChange={this.handleChange}
-              type='password'
-              className='form-control'
-              id='password'
-              aria-describedby='passwordHelp'
-            />
-            <div
-              id='passwordHelp'
-              className='form-text'
-            >
-              Enter your password
-            </div>
-          </div>
+          <Input
+            name='username'
+            value={account.username}
+            onChange={this.handleChange}
+          />
+          <Input
+            name='password'
+            value={account.password}
+            onChange={this.handleChange}
+          />
           <div className='mb-3 form-check'>
             <input
               type='checkbox'
@@ -121,3 +87,56 @@ class LoginForm extends Component {
 }
 
 export default LoginForm;
+
+{
+  /* <div className='mb-3'>
+    <label
+        htmlFor='username'
+        className='form-label'
+    >
+        Username
+    </label>
+    <input
+        // autoFocus
+        // ref={this.username}
+        value={account.username}
+        name='username'
+        // input field artık kendi state'i yerine bu class'ın state'ine bağlandı
+        // controlled element oldu. Mutlaka value değeri buraya yazılmalı !!!
+        onChange={this.handleChange}
+        type='text'
+        className='form-control'
+        id='username'
+        aria-describedby='usernameHelp'
+    />
+    <div
+        id='usernameHelp'
+        className='form-text'
+    >
+        Enter your username
+    </div>
+    </div>
+    <div className='mb-3'>
+    <label
+        htmlFor='password'
+        className='form-label'
+    >
+        Password
+    </label>
+    <input
+        value={account.password}
+        name='password'
+        onChange={this.handleChange}
+        type='password'
+        className='form-control'
+        id='password'
+        aria-describedby='passwordHelp'
+    />
+    <div
+        id='passwordHelp'
+        className='form-text'
+    >
+        Enter your password
+    </div>
+    </div> */
+}

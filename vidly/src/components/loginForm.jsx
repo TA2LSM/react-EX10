@@ -1,17 +1,22 @@
 import React, { Component } from 'react';
+import Joi from 'joi-browser';
 
 import Input from './common/input';
-import withParams from './productDetails';
 
 class LoginForm extends Component {
   state = {
     account: { username: '', password: '' },
     // boş string ya da server'dan çekilen değer ile init edilmeli. null ya da
     // tanımsız ( account: {  password: '' }, gibi ) OLAMAZ. Hata alırız...
+    errors: {
+      // username: '',
+    },
+    //errors['username'] ile direkt erişim kullanılabilir.
   };
 
   // gerçek DOM'da bir şeye erişmek için kullanılır. Mümkün olduğu kadar kullanmamaya
-  // ya da en az sayıda kullanmaya çalışılır.
+  // ya da en az sayıda kullanmaya çalışılır. (kodun dibinde yorum olarak bırakılan
+  // kısımda nasıl kullanıldığı gözüküyor: ref={this.username} kısmı)
   //username = React.createRef();
 
   // Lifecycle Hook
@@ -28,24 +33,89 @@ class LoginForm extends Component {
     e.preventDefault();
     // Call the server, save the changes, redirect user to different page
 
+    const errors = this.validate();
+    // eğer hata yoksa null dönecekmiş gibi düşündük.
+
+    this.setState({ errors: errors || {} });
+    // eğer hata yoksa null.username'e erişmeye çalışılıp hata alınır. Bunun yerine
+    // empty object dönmek sorunu çözüyor. null bir obje olmayacağı için sorun olur.
+
+    if (errors) return;
+
     // const username = document.getElementById("username").value; << javascript'te böyle
     // const username = this.username.current.value; // DOM'a erişip dom elementinin değerini alabiliriz.
     // console.log(username);
-
     //console.log(this.state.account);
   };
 
   handleChange = ({ currentTarget: input }) => {
-    const account = { ...this.state.account }; // kopya oluştur
+    const errors = { ...this.state.errors };
+    const errorMessage = this.validateProperty(input);
 
+    if (errorMessage) errors[input.name] = errorMessage;
+    else delete errors[input.name];
+
+    const account = { ...this.state.account }; // kopya oluştur
     // account.username (account["username"]) ve account.password'e erişip
     // e.currentTarget.value'dan gelen değeri kaydeder. (e.currentTarget >> input olarak içeri alındı)
     account[input.name] = input.value;
-    this.setState({ account });
+    this.setState({ account, errors });
+  };
+
+  // "label" kısmı, hata durumunda listelenecek şekli
+  schema = {
+    username: Joi.string().min(3).max(32).required().label('Username'),
+    password: Joi.string().min(4).required().label('Password'),
+  };
+
+  validateProperty = ({ name, value }) => {
+    const objToValidate = { [name]: value }; // username: ... ya da password: ... şeklinde bir obje oluşturur.
+    const schemaToUse = { [name]: this.schema[name] };
+
+    const { error } = Joi.validate(objToValidate, schemaToUse);
+    return error ? error.details[0].message : null;
+
+    // Temel doğrulama (yukarıdaki gelişmiş doğrulama bunun yerine kullanıldı)
+    // if (name === 'username') {
+    //   if (value.trim() === '') return 'Username is required';
+    //   if (value.trim().length <= 2) return 'Username must be at least 3 characters long';
+    // }
+
+    // if (name === 'password') {
+    //   if (value.trim() === '') return 'Password is required';
+    //   if (value.trim().length <= 3) return 'Password must be at least 4 characters long';
+    // }
+  };
+
+  validate = () => {
+    const joiOptions = { abortEarly: false };
+    // son parametre ilk hatayı bulduğunda Joi durmasın diye
+    const { error } = Joi.validate(this.state.account, this.schema, joiOptions);
+    if (!error) return null;
+
+    const errors = {};
+    // Aşağıdaki kısımda .map() de kullanılabilirdi.
+    // item.path[0]'de "username" ya da "password" yazacak. Joi şemasında tanımladığımız
+    // değişkenlere ait bir validation hatası oluşursa bu isimler kullanılacak.
+    // item.message'da ise hataya ilişkin detaylar olacak. Biz errors objesi içine [] erişimi
+    // ile bu değerleri push'luyoruz.
+    for (let item of error.details) errors[item.path[0]] = item.message;
+    return errors;
+
+    //Yukardaki kodlar aşağıdakilerin yerine yazıldı
+    // const errors = {};
+    // const { account } = this.state;
+
+    // // Temel doğrulama (gelişmişi ile değişecek)
+    // if (account.username.trim() === '') errors.username = 'Username is required';
+    // if (account.password.trim() === '') errors.password = 'Password is required';
+
+    // //return errors;
+    // return Object.keys(errors).length === 0 ? null : errors;
   };
 
   render() {
-    const { account } = this.state;
+    const { account, errors } = this.state;
 
     return (
       <div>
@@ -54,11 +124,13 @@ class LoginForm extends Component {
           <Input
             name='username'
             value={account.username}
+            error={errors.username} // errors['username'] de olur
             onChange={this.handleChange}
           />
           <Input
             name='password'
             value={account.password}
+            error={errors.password}
             onChange={this.handleChange}
           />
           <div className='mb-3 form-check'>
@@ -77,6 +149,7 @@ class LoginForm extends Component {
           <button
             type='submit'
             className='btn btn-primary'
+            disabled={this.validate()} //null dönerse false, diğer durumda true kabul edilir
           >
             Login
           </button>
